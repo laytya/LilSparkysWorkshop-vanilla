@@ -3,8 +3,6 @@
 
 LilSparky's Workshop
 
-version 0.2
-oct.11.2007
 
 
 LilSparky's Workshop is a tradeskill addon designed to plug into the World of Warcraft trade skill and crafting frames

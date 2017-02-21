@@ -206,7 +206,7 @@
 			</OnLoad> 
 			
 			<OnEvent>
-				LSW_OnEvent(event, arg1);
+				LSW_OnEvent();
 			</OnEvent>
 		</Scripts>
 	

@@ -1,11 +1,7 @@
-
-
 -- LilSparky's Workshop -- Addon for Slarti's Advanced Tradeskill Window mod for WOW
 -- Lilsparky of Lothar
--- v0.2
--- oct.11.2007
 
-
+local _G = getfenv(0)
 
 ATSW_ShowWindow_ORIGINAL = nil;
 TradeSkillFrame_Show_ORIGINAL = nil;
@@ -13,11 +9,11 @@ TradeSkillFrame_Update_ORIGINAL = nil;
 
 ---
 LSW_VERSION = GetAddOnMetadata("LilSparkysWorkshop", "Version");
-LSW_initialized = false;
 
 LSW_Mode = "TradeSkill";
 
-LSW_AuctioneerHook = "auctioneer";
+LSW_AuctioneerHook = false;
+local AUX = nil
 
 LSW_TRADESKILL_INDEX_MAX = 8
 LSW_CRAFT_INDEX_MAX = 8
@@ -35,7 +31,7 @@ LSW_globalSync = 1;
 LSW_skillPriceCache={};
 
 LSW_globalFate = 0;
-LSW_globalFateMax = 3;
+LSW_globalFateMax = 2;
 
 -- these could certainly be made language specific if needed
 LSW_itemFateList={};
@@ -48,6 +44,35 @@ LSW_skillWidthNarrow = 223;
 LSW_skillWidthWide = 243;
 
 LSW_skillWidth = LSW_skillWidthWide;
+
+local LSW_debugWin = 0
+
+function LSW_Message( visible, ...)
+	LSW_debugWin = 0
+	local name, shown;
+	for i=1, NUM_CHAT_WINDOWS do
+		name,_,_,_,_,_,shown = GetChatWindowInfo(i);
+		if (string.find(string.lower(name) ,"debug")) then LSW_debugWin = i; break; end
+	end
+	if (LSW_debugWin == 0) then 
+		LSW_debugWin = DEFAULT_CHAT_FRAME
+	else
+		LSW_debugWin = getglobal("ChatFrame"..LSW_debugWin)
+	end
+	for i = 1,arg.n do
+		if type(arg[i]) == "nil" then
+			arg[i] = "(nil)";
+		elseif type(arg[i]) == "boolean" and arg[i] then
+			arg[i] = "(true)";
+		elseif type(arg[i]) == "boolean" and not arg[i] then
+			arg[i] = "(false)";
+		end
+	end
+
+	if (visible) then
+		LSW_debugWin:AddMessage("LSW: " .. table.concat (arg, " "), 0.5, 0.5, 1);
+	end
+end
 
 
 function LSW_formatMoney(moneyString,dark)
@@ -163,7 +188,7 @@ end
 function LSW_findItemID(link)
 	if ( type(link) ~= 'string' ) then return end
 	local i,j,itemID = string.find(link, "|Hitem:(%d+):");	
--- DEFAULT_CHAT_FRAME:AddMessage("itemID - "..itemID);	
+-- LSW_Message( true,"itemID - "..itemID);	
 	return tonumber(itemID); 
 end
 
@@ -187,94 +212,70 @@ function LSW_itemPriceVendor(link)
 	return buy, sell, false
 end
 
-
+function LSW_itemPrice(link, minSeen)
+	local sellPrice, failed = 0, false
+	if AUX then
+		sellPrice, failed = LSW_itemPriceAUX(link, minSeen) 
+	end
+	if failed and Auctioneer then
+		sellPrice, failed = LSW_itemPriceAuctioneer(link, minSeen)
+	end
+	return sellPrice, failed
+end
 
 function LSW_itemPriceAuctioneer(link, minSeen) -- auctioneer version
 	if (not Auctioneer or not link) then return 0, true; end
 
 	if (not minSeen) then minSeen = 1 end;
 	
--- DEFAULT_CHAT_FRAME:AddMessage(link);
-
-	local itemKey = Auctioneer.ItemDB.CreateItemKeyFromLink(link);
-	local dataMissing = false;
+-- LSW_Message( true,link);
+	local itemKey
+	if Auctioneer.ItemDB then
+		itemKey = Auctioneer.ItemDB.CreateItemKeyFromLink(link);
+	else
+		local itemKeys = Auctioneer.Util.GetItems(link)
+		itemKey = itemKeys[1] 
+	end
 	
-	local itemTotals = Auctioneer.HistoryDB.GetItemTotals(itemKey, auctKey);
-
-	local sellPrice=0;
-	
-	if (not itemTotals) then
-		return 0,0,true;
+	local itemTotals 
+	if Auctioneer.HistoryDB then 
+		itemTotals = Auctioneer.HistoryDB.GetItemTotals(itemKey);
+	else
+		itemTotals = {}
+		itemTotals.buyOut,itemTotals.seenCount = Auctioneer.Statistic.GetHistMedian(itemKey)
 	end
 
--- DEFAULT_CHAT_FRAME:AddMessage(itemTotals.seenCount.." seen");
-	if (itemTotals.seenCount < minSeen) then
-		return 0, true;
-	else		
+	local sellPrice = 0;
+	
+-- LSW_Message( true,itemTotals.seenCount.." seen");
+	if (itemTotals and itemTotals.seenCount and itemTotals.seenCount < minSeen) then
 --		sellPrice  = Auctioneer.Statistic.GetMarketPrice(itemKey, auctKey);
 		
-		sellPrice  = Auctioneer.Statistic.GetHSP(itemKey, auctKey,1);
-		dataMissing = false;		
+		sellPrice  = Auctioneer.Statistic.GetHSP(itemKey, nil,1);
+	else
+		return 0, true
 	end
 	
-	return sellPrice, dataMissing;
-end
-
-
-function LSW_itemPriceAucAdvanced(link, minSeen) -- aucadvanced version (work in progress)
-	local numSeen;
-	
-	if (not link) then return 0, true; end
-	
-	if (not minSeen) then minSeen = 1; end
-
-	local sellPrice=0;
-	sellPrice, numSeen = AucAdvanced.API.GetMarketValue(link, AucAdvanced.GetFaction());
-				
-	if (not sellPrice or numSeen < minSeen) then
-		return 0, true;
-	end
-
-	return sellPrice, flse;
-end
-
-
-function LSW_itemPriceAuctioneerBoth(link, minSeen) -- use both aucadvanced and auctioneer data
-	if (not Auctioneer or not AucAdvanced or not link) then return 0, true; end
-
-	if (not minSeen) then minSeen = 1 end;
-	
--- DEFAULT_CHAT_FRAME:AddMessage(link);
-
-	local itemKey = Auctioneer.ItemDB.CreateItemKeyFromLink(link);
-	local dataMissing = false;
-	
-	local itemTotals = Auctioneer.HistoryDB.GetItemTotals(itemKey, auctKey);
-	local sellPrice=0;
-	local numSeen=0;
-	
-	if (itemTotals) then
-		numSeen = itemTotals.seenCount;
-		
-		sellPrice  = Auctioneer.Statistic.GetHSP(itemKey, auctKey,1);
---		dummy, sellPrice  = Auctioneer.Statistic.GetMarketPrice(itemKey, auctKey);
-
-	end
-
-	local sellPriceAdv, numSeenAdv = AucAdvanced.API.GetMarketValue(link, AucAdvanced.GetFaction());
-	
-	if (sellPriceAdv) then
-		sellPrice = (sellPrice * numSeen + sellPriceAdv * numSeenAdv) / (numSeenAdv + numSeen);
-		numSeen = numSeenAdv + numSeen;
-	end
-	
-	if (numSeen < minSeen) then
-		return 0, true;
-	end
 	
 	return sellPrice, false;
 end
 
+
+function LSW_itemPriceAUX(link, minSeen) 
+	local numSeen;
+	if (not link) then return 0, true; end
+	if (not minSeen) then minSeen = 1; end
+
+	local item_id, suffix_id = AUX.info.parse_link(link)
+	local item_key = (item_id or 0) .. ':' .. (suffix_id or 0)
+    local value =  AUX.history.value(item_key)
+				
+	if (not value ) then
+		return 0, true;
+	end
+
+	return value, false;
+end
 
 
 function LSW_itemValuation(skillName, skillLink, skillID)
@@ -331,7 +332,7 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 			reagentValue = sellAtAuction;
 		end
 
---DEFAULT_CHAT_FRAME:AddMessage(reagentLink.."  "..reagentValue);
+--LSW_Message( true,reagentLink.."  "..reagentValue);
 	
 
 		buy = buy + reagentValue * reagentCount;
@@ -345,7 +346,7 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 		
 		min, max = LSW_GetTradeSkillNumMade(skillID);
 		
--- DEFAULT_CHAT_FRAME:AddMessage(skillName.."  "..min.." "..max);
+-- LSW_Message( true,skillName.."  "..min.." "..max);
 
 		stacks = (min+max)/2;
 	
@@ -455,7 +456,7 @@ function LSW_SkillShow()
 			skillID =   atsw_skilllisting[listpos].id;
 		end
 		
---		DEFAULT_CHAT_FRAME:AddMessage("ATSW: "..skillName.." "..skillLink.." "..skillType.." "..skillID);
+--		LSW_Message( true,"ATSW: "..skillName.." "..skillLink.." "..skillType.." "..skillID);
 
 	else
 		skillID=this:GetID();
@@ -555,7 +556,7 @@ end
 
 
 function LSW_CostButton_OnEnter()
--- DEFAULT_CHAT_FRAME:AddMessage("skill cost enter");
+-- LSW_Message( true,"skill cost enter");
    	GameTooltip:SetOwner(this, "ANCHOR_NONE");
 	GameTooltip:SetPoint("BOTTOMRIGHT", "UIParent", "BOTTOMRIGHT", -CONTAINER_OFFSET_X - 13, CONTAINER_OFFSET_Y);
 	GameTooltip:SetText("Estimated cost to use skill.");
@@ -856,75 +857,56 @@ end
 
 
 function LSW_OnLoad()
-	LSW_Initialize();
-	LSW_initialized = true;
+	
+	this:RegisterEvent("ADDON_LOADED");
+	--this:RegisterEvent("TRADE_SKILL_SHOW");
+	--this:RegisterEvent('CRAFT_SHOW')
 end
 
 
---- 
-function LSW_OnLoad_DISABLED()	
-	
-	if (IsAddOnLoaded("AdvancedTradeSkillWindow")) then
-		LSW_Initialize();
-		LSW_initialized = true;
-	end
-	
-	this:RegisterEvent("TRADE_SKILL_SHOW");
-	this:RegisterEvent("TRADE_SKILL_UPDATE");
-end
-
-
-function LSW_OnEvent(event)
-	if (LSW_initialized == false) then
-		if (event == "CRAFT_SHOW" or event == "TRADE_SKILL_SHOW") then
-			LSW_Initialize();
-			LSW_initialized = true;
-		end
+function LSW_OnEvent()
+	if (event == "ADDON_LOADED" and (arg1 == "LilSparkysWorkshop" or arg1 == "aux-addon" or arg1 == "Auctioneer" 
+		or arg1 == "AdvancedTradeSkillWindow" or arg1 == "Enchantrix")) then
+		LSW_Initialize(arg1);
 	end
 end
 
 
-function LSW_Initialize()
-	DEFAULT_CHAT_FRAME:AddMessage("LilSparky's Workshop v0.2");
-	LoadAddOn("Auctioneer");  -- demands Auctioneer load (too hacky?)
-	
-	if (not Auctioneer) and (not AucAdvanced) then
-		DEFAULT_CHAT_FRAME:AddMessage("ERROR: LilSparky's Workshop requires either Auctioneer or AucAdvanced to function properly.");
-		return;
+function LSW_Initialize(addon)
+
+	if addon == "LilSparkysWorkshop" then
+		LSW_Message( true,"LilSparky's Workshop " .. LSW_VERSION .. " loaded.");
 	end
 	
-	if (AucAdvanced and AucAdvanced.Version) then
-		LSW_AuctioneerHook = "aucadv"
-		
-		if (Auctioneer and Auctioneer.Version) then
-DEFAULT_CHAT_FRAME:AddMessage("LilSparky's Workshop has found Auctioneer (v"..Auctioneer.Version..") and AucAdvanced (v"..AucAdvanced.Version..")");		
-			LSW_itemPrice = LSW_itemPriceAuctioneerBoth
-		else
-DEFAULT_CHAT_FRAME:AddMessage("LilSparky's Workshop has found AucAdvanced (v"..AucAdvanced.Version..")");		
-			LSW_itemPrice = LSW_itemPriceAucAdvanced
-		end
-	else
-DEFAULT_CHAT_FRAME:AddMessage("LilSparky's Workshop has found Auctioneer (v"..Auctioneer.Version..")");		
-
-		LSW_AuctioneerHook = "auctioneer"
-		LSW_itemPrice = LSW_itemPriceAuctioneer
-	end
-
-	
-	if (Enchantrix) then
+	if (not AUX and (addon == "aux-addon" or (_G.defined and _G.defined("aux.core.history"))))then
+		AUX = {}
+		AUX.history = require "aux.core.history"
+		AUX.info = require 'aux.util.info'
+		AUX.cache = require 'aux.core.cache'
+		AUX.disenchant = require 'aux.core.disenchant'
 		LSW_globalFateMax = 3
-	else
-		DEFAULT_CHAT_FRAME:AddMessage("WARNING: LilSparky's Workshop needs Enchantrix to calculate disenchant values.");
-		DEFAULT_CHAT_FRAME:AddMessage("Addon will still work, but no disenchant values will be calculated.");
-		LSW_globalFateMax = 2
+	
+		LSW_Message( true,"LilSparky's Workshop: added AUX functions");		
+	--	LSW_itemPrice = LSW_itemPriceAux
+		
+		end
+	
+	if (not LSW_AuctioneerHook and (addon == "Auctioneer" or Auctioneer)) then
+		LSW_Message( true,"LilSparky's Workshop: added Auctioneer (v"..Auctioneer.Version..") functions");		
+		LSW_AuctioneerHook = true
+	--	LSW_itemPrice = LSW_itemPriceAuctioneer
 	end
 	
-	if (ATSW_ShowWindow) then
+	if (LSW_globalFateMax == 2 and (addon == "Enchantrix" or Enchantrix)) then
+		LSW_globalFateMax = 3
+	end
+	
+	if (LSW_Mode ~= "ATSW" and (addon == "AdvancedTradeSkillWindow" or ATSW_ShowWindow)) then
                 LSW_Mode = "ATSW"
 		ATSW_ShowWindow_ORIGINAL = ATSW_ShowWindow;
 		ATSW_ShowWindow = LSW_ShowWindowATSW;
 			
-		DEFAULT_CHAT_FRAME:AddMessage("LilSparky's Workshop plugging into AdvancedTradeSkillWindow.");
+		LSW_Message( true,"LilSparky's Workshop: plugging into AdvancedTradeSkillWindow.");
 		
 		LSW_TRADESKILL_INDEX_MAX = ATSW_TRADE_SKILLS_DISPLAYED;
 		
@@ -936,8 +918,44 @@ DEFAULT_CHAT_FRAME:AddMessage("LilSparky's Workshop has found Auctioneer (v"..Au
 		for i=1, LSW_TRADESKILL_INDEX_MAX, 1 do
 			LSW_ButtonInitATSW(i);
 		end
-	else	
-		DEFAULT_CHAT_FRAME:AddMessage("LilSparky's Workshop plugging into standard Tradeskill/Crafting frames.");
+	end
+	
+	
+end
+
+local UFStartTime = time();
+local UFInitialized;
+local UpdateFrame;
+
+function UFOverHookEvents()
+	if(time() - UFStartTime > 5 and UFInitialized == nil) then
+		LSW_PostInitialize()
+    	UFStartTime = nil;
+		UFInitialized = true;
+		this:Hide();
+      	this:SetScript("OnUpdate", nil);
+      	this = nil;
+   end
+end
+
+local UpdateFrame = CreateFrame("Frame", nil);
+UpdateFrame:SetScript("OnUpdate",UFOverHookEvents);
+UpdateFrame:RegisterEvent("OnUpdate");
+
+function LSW_PostInitialize()
+		
+	if (not Auctioneer) and (not AUX) then
+		LSW_Message( true,"ERROR: LilSparky's Workshop requires either Auctioneer or AUX to function properly.");
+		return;
+	end
+	
+	if LSW_globalFateMax == 2 then
+		LSW_Message( true,"WARNING: LilSparky's Workshop needs Enchantrix or AUX to calculate disenchant values.");
+		LSW_Message( true,"Addon will still work, but no disenchant values will be calculated.");
+	end	
+		
+	if LSW_Mode ~= "ATSW" then
+		LSW_Message( true,"LilSparky's Workshop: plugging into standard Tradeskill/Crafting frames.");
 
 	-- more forced loading, but since i'm pluggin right into the system, i kind of need to
 		if (not IsAddOnLoaded("Blizzard_TradeSkillUI")) then
@@ -975,6 +993,4 @@ DEFAULT_CHAT_FRAME:AddMessage("LilSparky's Workshop has found Auctioneer (v"..Au
 			LSW_ButtonInitStandard(i);
 		end
 	end
-	
 end
-
