@@ -198,17 +198,24 @@ function LSW_itemPriceVendor(link)
 	local buy = 0
 	local itemInfo = nil;
 	
+	if Auctioneer then
 	local itemID = LSW_findItemID(link)
-	
 	if (itemID and itemID > 0) and (Informant) then
 		itemInfo = Informant.GetItem(itemID)
 	end
+	end
 	
-	if (not itemInfo) then return 0,0, true end
+	if AUX and not itemInfo then
+		itemInfo = {};
+		local item_id, suffix_id = AUX.info.parse_link(link)
+		itemInfo.buy, itemInfo.sell = AUX.cache.merchant_info(item_id)
+	end
+	
+	if (not itemInfo) then return 0, 0, true end
 
 	buy = tonumber(itemInfo.buy) or 0
 	sell = tonumber(itemInfo.sell) or 0
---	Sea.io.printTable({buy, sell})
+
 	return buy, sell, false
 end
 
@@ -365,6 +372,9 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 			if type(sellinfo) == "table" and type(sellinfo.totals) == "table" then 
 				sell = sellinfo.totals.hspValue
 			end
+		end
+		if AUX and sellinfo == 0 then
+			local item_info = temp-AUXinfo.item(item_id)
 		end
 	end
 	
