@@ -208,7 +208,7 @@ function LSW_itemPriceVendor(link)
 	if AUX and not itemInfo then
 		itemInfo = {};
 		local item_id, suffix_id = AUX.info.parse_link(link)
-		itemInfo.buy, itemInfo.sell = AUX.cache.merchant_info(item_id)
+		itemInfo.sell, itemInfo.buy  = AUX.cache.merchant_info(item_id)
 	end
 	
 	if (not itemInfo) then return 0, 0, true end
