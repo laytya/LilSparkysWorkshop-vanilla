@@ -36,7 +36,7 @@ Items worth more than their cost have the value hilighted.
 Enjoy and happy crafting.
 
 LilSparky of Lothar
-
+updated by laytya at github
 
 
 version history:
@@ -47,3 +47,12 @@ v0.2 - oct.11,2007
 - removed dependency on advanced tradeskill window
 - fix bug where addon initialized prior to auctioneer loading
 - now loads on demand
+
+v0.4 - mar.1,2017 (by laytya at github)
+- ported from TBC version
+- Added AUX support
+- refactoring startup
+- vendor and disenchantsupport from AUX
+
+v0.4b - nov.29,2017 (by laytya at github)
+- Fixed AUX support (actual on nov 29 2017)

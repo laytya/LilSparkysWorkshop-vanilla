@@ -1,5 +1,6 @@
 -- LilSparky's Workshop -- Addon for Slarti's Advanced Tradeskill Window mod for WOW
 -- Lilsparky of Lothar
+-- Updated by laytya at github
 
 local _G = getfenv(0)
 
@@ -208,7 +209,7 @@ function LSW_itemPriceVendor(link)
 	if AUX and not itemInfo then
 		itemInfo = {};
 		local item_id, suffix_id = AUX.info.parse_link(link)
-		itemInfo.sell, itemInfo.buy  = AUX.cache.merchant_info(item_id)
+		itemInfo.sell,itemInfo.buy  = AUX.info.merchant_info(item_id)
 	end
 	
 	if (not itemInfo) then return 0, 0, true end
@@ -243,7 +244,6 @@ function LSW_itemPriceAuctioneer(link, minSeen) -- auctioneer version
 		local itemKeys = Auctioneer.Util.GetItems(link)
 		itemKey = itemKeys[1] 
 	end
-	
 	local itemTotals 
 	if Auctioneer.HistoryDB then 
 		itemTotals = Auctioneer.HistoryDB.GetItemTotals(itemKey);
@@ -257,7 +257,6 @@ function LSW_itemPriceAuctioneer(link, minSeen) -- auctioneer version
 -- LSW_Message( true,itemTotals.seenCount.." seen");
 	if (itemTotals and itemTotals.seenCount and itemTotals.seenCount < minSeen) then
 --		sellPrice  = Auctioneer.Statistic.GetMarketPrice(itemKey, auctKey);
-		
 		sellPrice  = Auctioneer.Statistic.GetHSP(itemKey, nil,1);
 	else
 		return 0, true
@@ -280,7 +279,6 @@ function LSW_itemPriceAUX(link, minSeen)
 	if (not value ) then
 		return 0, true;
 	end
-
 	return value, false;
 end
 
@@ -373,8 +371,12 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 				sell = sellinfo.totals.hspValue
 			end
 		end
-		if AUX and sellinfo == 0 then
-			local item_info = temp-AUXinfo.item(item_id)
+		if AUX and sell == 0 then
+			local item_id, suffix_id = AUX.info.parse_link(skillLink)
+			local item_info = AUX.info.item(item_id)
+			if item_info then
+				sell = AUX.disenchant.value(item_info.slot, item_info.quality, item_info.level)
+			end
 		end
 	end
 	
@@ -867,10 +869,7 @@ end
 
 
 function LSW_OnLoad()
-	
 	this:RegisterEvent("ADDON_LOADED");
-	--this:RegisterEvent("TRADE_SKILL_SHOW");
-	--this:RegisterEvent('CRAFT_SHOW')
 end
 
 
@@ -883,30 +882,22 @@ end
 
 
 function LSW_Initialize(addon)
-
 	if addon == "LilSparkysWorkshop" then
 		LSW_Message( true,"LilSparky's Workshop " .. LSW_VERSION .. " loaded.");
 	end
 	
-	if (not AUX and (addon == "aux-addon" or (_G.defined and _G.defined("aux.core.history"))))then
+if (not AUX and (addon == "aux-addon" or _G.aux ~= nil))then
 		AUX = {}
 		AUX.history = require "aux.core.history"
 		AUX.info = require 'aux.util.info'
-		AUX.cache = require 'aux.core.cache'
 		AUX.disenchant = require 'aux.core.disenchant'
 		LSW_globalFateMax = 3
-	
 		LSW_Message( true,"LilSparky's Workshop: added AUX functions");		
-	--	LSW_itemPrice = LSW_itemPriceAux
-		
 		end
-	
 	if (not LSW_AuctioneerHook and (addon == "Auctioneer" or Auctioneer)) then
 		LSW_Message( true,"LilSparky's Workshop: added Auctioneer (v"..Auctioneer.Version..") functions");		
 		LSW_AuctioneerHook = true
-	--	LSW_itemPrice = LSW_itemPriceAuctioneer
 	end
-	
 	if (LSW_globalFateMax == 2 and (addon == "Enchantrix" or Enchantrix)) then
 		LSW_globalFateMax = 3
 	end
