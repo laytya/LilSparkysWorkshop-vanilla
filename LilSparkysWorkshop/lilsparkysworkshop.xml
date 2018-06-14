@@ -19,7 +19,7 @@
       <OnClick>
       </OnClick>
       <OnEnter>
-        LSW_CostButton_OnEnter();
+        LSW_CostButton_OnEnter(this);
       </OnEnter>
       <OnLeave>
         LSW_CostButton_OnLeave();

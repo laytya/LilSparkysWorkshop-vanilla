@@ -40,7 +40,7 @@ LSW_itemFateList[1]="a";		-- auction
 LSW_itemFateList[2]="v";		-- vendor
 LSW_itemFateList[3]="d";		-- disenchant
 
-
+LSW_excludedItemId = {8925,3372,4342,3371,3713,4342,4289,4291,4340,2692,2678,2321,2320,4400,4399,2324,3857,4341,3466,14341,8343,18256,6217,6260}
 LSW_skillWidthNarrow = 223;
 LSW_skillWidthWide = 243;
 
@@ -193,6 +193,15 @@ function LSW_findItemID(link)
 	return tonumber(itemID); 
 end
 
+function LSW_isInTable(tab, id)
+	for k,v in ipairs(tab) do
+		if (v == id) then
+			return true;
+		end
+	end
+	return false;
+end
+
 
 function LSW_itemPriceVendor(link)
 	local sell = 0
@@ -307,6 +316,7 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 	
 	local sell = 0;
 	local buy = 0;
+	local buystring = "";
 	local stacks = 1;
 	local itemFate = "?"
 	
@@ -319,22 +329,27 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 	for i=1, numReagents, 1 do
 		local reagentName, dummy, reagentCount = LSW_GetTradeSkillReagentInfo(skillID, i);
 		local reagentLink = LSW_GetTradeSkillReagentItemLink(skillID, i);
+		local reagentItemId = LSW_findItemID(reagentLink)
 		
 		local sellAtAuction;
 		local buyFromVendor;
 		local ahDataMissing;
 		
-		local reagentValue;
+		local reagentValue = 0;
 		
 		sellAtAuction, ahDataMissing = LSW_itemPrice(reagentLink, LSW_MININUM_REAGENT_AUCTIONS);
 		buyFromVendor = LSW_itemPriceVendor(reagentLink);
 
--- calculate the cost of reagents.  if ah data exists, use it.  if no ah data exists then use the buy from vendor price
+-- calculate the cost of reagents.  if vendor price missing use ah data if it exists.
 
-		if (ahDataMissing) then
-			reagentValue = buyFromVendor;
-		else
+		
+
+		if (not ahDataMissing and not LSW_isInTable(LSW_excludedItemId, reagentItemId)) then
 			reagentValue = sellAtAuction;
+			buystring = buystring .. sellAtAuction .. "(A) + " 
+		else
+			reagentValue = buyFromVendor;
+			buystring = buystring .. (buyFromVendor and (buyFromVendor .. "(V) + ")  or "0 +") 
 		end
 
 --LSW_Message( true,reagentLink.."  "..reagentValue);
@@ -344,7 +359,7 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 	end
 		
 	cache.costAmount = buy;  -- costAmount = how much it would cost to purchase the reagents
-	--Sea.io.print("|"..LSW_findItemID(skillLink).."|")
+--	Sea.io.print("|"..buystring.."|")
 	local ItemId = LSW_findItemID(skillLink)
 	if ( ItemId and GetItemInfo(ItemId)) then  -- items return info, enchants return nil
 		local min,max;
@@ -402,9 +417,9 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 				
 	if (LSW_globalFate==0) then
 		
-		return LSW_skillPriceCache[skillName].costAmount, LSW_skillPriceCache[skillName].valueAmount[LSW_globalFate], LSW_skillPriceCache[skillName].itemFate;
+		return LSW_skillPriceCache[skillName].costAmount, LSW_skillPriceCache[skillName].valueAmount[LSW_globalFate], LSW_skillPriceCache[skillName].itemFate, buystring;
 	else
-		return LSW_skillPriceCache[skillName].costAmount, LSW_skillPriceCache[skillName].valueAmount[LSW_globalFate], LSW_itemFateList[LSW_globalFate];
+		return LSW_skillPriceCache[skillName].costAmount, LSW_skillPriceCache[skillName].valueAmount[LSW_globalFate], LSW_itemFateList[LSW_globalFate] , buystring;
 	end
 end
 
@@ -478,7 +493,7 @@ function LSW_SkillShow()
 	--Sea.io.printTable({skillID,skillName, skillType,skillLink})
 	
 	if (skillName and skillType ~= "header") then						
-		local costAmount, valueAmount, itemFate = LSW_itemValuation(skillName, skillLink, skillID);
+		local costAmount, valueAmount, itemFate, buystring = LSW_itemValuation(skillName, skillLink, skillID);
 	--	Sea.io.printTable({costAmount, valueAmount, itemFate})				
 		local itemFateString = string.format("|c%s%s|r", LSW_itemFateColor[itemFate], itemFate);
 						
@@ -489,6 +504,7 @@ function LSW_SkillShow()
 			buttonValue:SetText(LSW_formatMoney(valueAmount,1)..itemFateString);
 			buttonCost:SetText(LSW_formatMoney(costAmount,1).."  ");
 		end
+		buttonCost.buystring = buystring;
 		local ItemId = LSW_findItemID(skillLink)			
 		if (ItemId and skillName and skillName ~= "") then
 			--local _,_,skillItemId = string.find(skillLink, "^.*|Hitem:(%d*):.*%[.*%].*$");
@@ -567,11 +583,11 @@ end
 
 
 
-function LSW_CostButton_OnEnter()
+function LSW_CostButton_OnEnter(button)
 -- LSW_Message( true,"skill cost enter");
    	GameTooltip:SetOwner(this, "ANCHOR_NONE");
 	GameTooltip:SetPoint("BOTTOMRIGHT", "UIParent", "BOTTOMRIGHT", -CONTAINER_OFFSET_X - 13, CONTAINER_OFFSET_Y);
-	GameTooltip:SetText("Estimated cost to use skill.");
+	GameTooltip:SetText("Estimated cost to use skill. " .. (button.buystring or "---"));
 	GameTooltip:Show();
 end
 
