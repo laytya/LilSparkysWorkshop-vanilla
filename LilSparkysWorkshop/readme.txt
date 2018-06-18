@@ -56,3 +56,10 @@ v0.4 - mar.1,2017 (by laytya at github)
 
 v0.4b - nov.29,2017 (by laytya at github)
 - Fixed AUX support (actual on nov 29 2017)
+
+v0.4c - jun.14,2018 (by laytya at github)
+- fixed #2 (item sell price & vendoer value of reagents)
+
+v0.4d - jun.18,2018 (by laytya at github)
+- added some more item numbers to exlude from AH pricing
+
