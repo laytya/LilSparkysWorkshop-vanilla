@@ -204,6 +204,7 @@ end
 
 
 function LSW_itemPriceVendor(link)
+	if ( type(link) ~= 'string' ) then return 0,0,true end
 	local sell = 0
 	local buy = 0
 	local itemInfo = nil;
@@ -290,6 +291,60 @@ function LSW_itemPriceAUX(link, minSeen)
 	end
 	return value, false;
 end
+function LSW_IsReagentCraftable(ReagentItemID)
+	for i=1,GetNumTradeSkills(),1 do
+		local skillLink = GetTradeSkillItemLink(i)
+		if skillLink and ReagentItemID == LSW_findItemID(skillLink) then
+			return i
+			end
+		end
+	return 0
+	end
+	
+function LSW_ReagentsCost(skillID)
+	
+	local numReagents, buy, dummy, buystring;
+	buystring = ""; buy = 0;
+	numReagents = LSW_GetTradeSkillNumReagents(skillID);
+	
+	for i=1, numReagents, 1 do
+		local reagentName, dummy, reagentCount = LSW_GetTradeSkillReagentInfo(skillID, i);
+		local reagentLink = LSW_GetTradeSkillReagentItemLink(skillID, i);
+		local reagentItemId = LSW_findItemID(reagentLink)
+		
+		local sellAtAuction;
+		local buyFromVendor;
+		local ahDataMissing;
+		
+		local reagentValue = 0;
+		
+		sellAtAuction, ahDataMissing = LSW_itemPrice(reagentLink, LSW_MININUM_REAGENT_AUCTIONS);
+		buyFromVendor = LSW_itemPriceVendor(reagentLink);
+
+-- calculate the cost of reagents.  if vendor price missing use ah data if it exists.
+		reagentSkillID = LSW_IsReagentCraftable(reagentItemId)
+		if reagentSkillID >0 then
+			reagentValue = LSW_ReagentsCost(reagentSkillID)
+	--		Sea.io.print("|"..reagentName.." => "..reagentValue.."|")
+			buystring = buystring .. reagentValue .. "(C) + " 
+		elseif (not ahDataMissing and not LSW_isInTable(LSW_excludedItemId, reagentItemId)) then
+			reagentValue = sellAtAuction;
+			buystring = buystring .. sellAtAuction .. "(A) + " 
+		else
+			reagentValue = buyFromVendor;
+			buystring = buystring .. (buyFromVendor and (buyFromVendor .. "(V) + ")  or "0 +") 
+		end
+
+--LSW_Message( true,reagentLink.."  "..reagentValue);
+	
+
+		buy = buy + reagentValue * reagentCount;
+	end
+		
+	return buy, buystring
+
+end
+
 
 
 function LSW_itemValuation(skillName, skillLink, skillID)
@@ -315,50 +370,13 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 	cache.valueAmount[3] = 0;
 	
 	local sell = 0;
-	local buy = 0;
+	
 	local buystring = "";
 	local stacks = 1;
 	local itemFate = "?"
 	
-	local dummy;
+	cache.costAmount, buystring = LSW_ReagentsCost(skillID)   -- costAmount = how much it would cost to purchase the reagents
 	
-	local numReagents;
-	
-	numReagents = LSW_GetTradeSkillNumReagents(skillID);
-	
-	for i=1, numReagents, 1 do
-		local reagentName, dummy, reagentCount = LSW_GetTradeSkillReagentInfo(skillID, i);
-		local reagentLink = LSW_GetTradeSkillReagentItemLink(skillID, i);
-		local reagentItemId = LSW_findItemID(reagentLink)
-		
-		local sellAtAuction;
-		local buyFromVendor;
-		local ahDataMissing;
-		
-		local reagentValue = 0;
-		
-		sellAtAuction, ahDataMissing = LSW_itemPrice(reagentLink, LSW_MININUM_REAGENT_AUCTIONS);
-		buyFromVendor = LSW_itemPriceVendor(reagentLink);
-
--- calculate the cost of reagents.  if vendor price missing use ah data if it exists.
-
-		
-
-		if (not ahDataMissing and not LSW_isInTable(LSW_excludedItemId, reagentItemId)) then
-			reagentValue = sellAtAuction;
-			buystring = buystring .. sellAtAuction .. "(A) + " 
-		else
-			reagentValue = buyFromVendor;
-			buystring = buystring .. (buyFromVendor and (buyFromVendor .. "(V) + ")  or "0 +") 
-		end
-
---LSW_Message( true,reagentLink.."  "..reagentValue);
-	
-
-		buy = buy + reagentValue * reagentCount;
-	end
-		
-	cache.costAmount = buy;  -- costAmount = how much it would cost to purchase the reagents
 --	Sea.io.print("|"..buystring.."|")
 	local ItemId = LSW_findItemID(skillLink)
 	if ( ItemId and GetItemInfo(ItemId)) then  -- items return info, enchants return nil
