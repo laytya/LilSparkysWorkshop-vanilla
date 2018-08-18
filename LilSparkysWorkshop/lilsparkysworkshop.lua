@@ -294,7 +294,8 @@ end
 function LSW_IsReagentCraftable(ReagentItemID)
 	for i=1,GetNumTradeSkills(),1 do
 		local skillLink = GetTradeSkillItemLink(i)
-		if skillLink and ReagentItemID == LSW_findItemID(skillLink) then
+		local name,_,_ = GetTradeSkillInfo(i)
+		if skillLink and ReagentItemID == LSW_findItemID(skillLink) and (not string.find(name,"Transmute")) then
 			return i
 			end
 		end
