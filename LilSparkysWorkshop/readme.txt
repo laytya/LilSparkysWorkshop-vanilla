@@ -63,5 +63,3 @@ v0.4c - jun.14,2018 (by laytya at github)
 v0.4d - jun.18,2018 (by laytya at github)
 - added some more item numbers to exlude from AH pricing
 
-v0.5 - jul.13,2018 (by laytya at github)
-- Reworked reagents cost calculation. if items reagent are craftible by same profession - reagent cost will be calculated by reagents of this reagent
