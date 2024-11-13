@@ -4,17 +4,17 @@
 
 LilSparky's Workshop adds auction-derived pricing information for trade skills right into the trade skill recipe frame. Each skill is evaluated for material costs and potential value of the item created. These two numbers are listed next to each skill in an easy-to-read format.
 
-Supported Auction Scanners:
+##Supported Auction Scanners:
 
 * Auctioneer
 * AUX
 
-Trade Skill Interfaces Supported:
+##Trade Skill Interfaces Supported:
 
 * AdvancedTradeSkillWindow
 * Blizzard's Standard UI
 
-Optionally Requires:
+##Optionally Requires:
 
 * Informant
 * Enchantrix 
@@ -25,3 +25,15 @@ The Value column can be left clicked to cycle through the different valuation me
 The Cost column simply sums up the costs for each reagent and reports the total.
 
 Tooltips for each column give more details about the price breakdowns LSW is considering.
+
+##Changelog
+v0.6
+
+Updeted way to catch prices. Now it calculate all from AUX market value, not averedge. SO u need Scan daily price to get right prices.
+You can do Right-Click on ingradient or item in ATSW while AUX open.
+Also it will get crafted ingradient price, not AUX price, if  you can craft it.
+
+
+>[!NOTE]
+>**NOT WORKING w/ ATSW2**
+>and NOT updated yet for 1.17.2 TWoW 

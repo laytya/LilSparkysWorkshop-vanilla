@@ -29,6 +29,7 @@ LSW_itemFateColor["v"]="ff206080";
 LSW_itemFateColor["?"]="ff800000";
 
 LSW_globalSync = 1;
+LSW_refrash = false
 LSW_skillPriceCache={};
 
 LSW_globalFate = 0;
@@ -284,7 +285,7 @@ function LSW_itemPriceAUX(link, minSeen)
 
 	local item_id, suffix_id = AUX.info.parse_link(link)
 	local item_key = (item_id or 0) .. ':' .. (suffix_id or 0)
-    local value =  AUX.history.value(item_key)
+    local value =  AUX.history.market_value(item_key)
 				
 	if (not value ) then
 		return 0, true;
@@ -313,20 +314,23 @@ function LSW_ReagentsCost(skillID)
 		local reagentLink = LSW_GetTradeSkillReagentItemLink(skillID, i);
 		local reagentItemId = LSW_findItemID(reagentLink)
 		
-		local sellAtAuction;
-		local buyFromVendor;
+		local sellAtAuction = 0;
+		local buyFromVendor = 0;
+		local madeByCraft = 0;
 		local ahDataMissing;
 		
 		local reagentValue = 0;
 		
 		sellAtAuction, ahDataMissing = LSW_itemPrice(reagentLink, LSW_MININUM_REAGENT_AUCTIONS);
 		buyFromVendor = LSW_itemPriceVendor(reagentLink);
-
+			
 -- calculate the cost of reagents.  if vendor price missing use ah data if it exists.
 		reagentSkillID = LSW_IsReagentCraftable(reagentItemId)
 		if reagentSkillID >0 then
-			reagentValue = LSW_ReagentsCost(reagentSkillID)
-	--		Sea.io.print("|"..reagentName.." => "..reagentValue.."|")
+			madeByCraft = LSW_ReagentsCost(reagentSkillID)
+		end
+		if madeByCraft > 0 and  madeByCraft < sellAtAuction or sellAtAuction == 0  then
+			reagentValue = madeByCraft
 			buystring = buystring .. reagentValue .. "(C) + " 
 		elseif (not ahDataMissing and not LSW_isInTable(LSW_excludedItemId, reagentItemId)) then
 			reagentValue = sellAtAuction;
@@ -335,9 +339,6 @@ function LSW_ReagentsCost(skillID)
 			reagentValue = buyFromVendor;
 			buystring = buystring .. (buyFromVendor and (buyFromVendor .. "(V) + ")  or "0 +") 
 		end
-
---LSW_Message( true,reagentLink.."  "..reagentValue);
-	
 
 		buy = buy + reagentValue * reagentCount;
 	end
@@ -355,7 +356,7 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 		LSW_skillPriceCache[skillName].sync = 0
 		LSW_skillPriceCache[skillName].valueAmount = {};
 	else
-		if (LSW_skillPriceCache[skillName].sync == LSW_globalSync) then
+		if (LSW_skillPriceCache[skillName].sync == LSW_globalSync and not LSW_refrash) then
 			if (LSW_globalFate==0) then
 				return LSW_skillPriceCache[skillName].costAmount, LSW_skillPriceCache[skillName].valueAmount[LSW_globalFate], LSW_skillPriceCache[skillName].itemFate;
 			else
@@ -442,9 +443,16 @@ function LSW_itemValuation(skillName, skillLink, skillID)
 	end
 end
 
-
-
 function LSW_SkillShow()
+	this:SetWidth(LSW_skillWidth);
+	local name = this:GetName();
+	local sid = this:GetID();
+	
+	LSW_SkillShowByName(name, sid)
+end
+
+
+function LSW_SkillShowByName(name, sid)
 	if (LSW_Mode == "Craft") then
 		if (GetCraftName() ~= "Enchanting") then
 			return;
@@ -452,9 +460,9 @@ function LSW_SkillShow()
 	end
 	
 	
-	this:SetWidth(LSW_skillWidth);
 	
-	local name = this:GetName();
+	
+
 	local itemLevel =nil
 	local x;
 	local id;
@@ -492,8 +500,8 @@ function LSW_SkillShow()
 	local skillID;
 	
 	if (LSW_Mode == "ATSW") then
-		local tradeSkillID=this:GetID();
-		local listpos=ATSW_GetSkillListingPos(tradeSkillID);
+		local tradeSkillID = sid
+		local listpos = ATSW_GetSkillListingPos(tradeSkillID);
 	
 		if(atsw_skilllisting[listpos]) then
 			skillName = atsw_skilllisting[listpos].name;
@@ -505,7 +513,7 @@ function LSW_SkillShow()
 --		LSW_Message( true,"ATSW: "..skillName.." "..skillLink.." "..skillType.." "..skillID);
 
 	else
-		skillID=this:GetID();
+		skillID = sid
 		skillName, skillType = LSW_GetTradeSkillInfo(skillID);
 		skillLink = LSW_GetTradeSkillItemLink(skillID);
 	end
@@ -513,7 +521,7 @@ function LSW_SkillShow()
 	
 	if (skillName and skillType ~= "header") then						
 		local costAmount, valueAmount, itemFate, buystring = LSW_itemValuation(skillName, skillLink, skillID);
-	--	Sea.io.printTable({costAmount, valueAmount, itemFate})				
+
 		local itemFateString = string.format("|c%s%s|r", LSW_itemFateColor[itemFate], itemFate);
 						
 		if (costAmount < valueAmount) then
@@ -921,12 +929,24 @@ function LSW_Initialize(addon)
 		LSW_Message( true,"LilSparky's Workshop " .. LSW_VERSION .. " loaded.");
 	end
 	
-if (not AUX and (addon == "aux-addon" or _G.aux ~= nil))then
+	if (not AUX and (addon == "aux-addon" or _G.aux ~= nil))then
 		AUX = {}
 		AUX.history = require "aux.core.history"
 		AUX.info = require 'aux.util.info'
 		AUX.disenchant = require 'aux.core.disenchant'
 		LSW_globalFateMax = 3
+		
+		local frames = {aux_frame:GetChildren()}
+		for k,v in pairs(frames) do
+			local ch = {v:GetChildren()}
+			for j,w in pairs(ch) do
+				if w.GetText and w:GetText() == "Pause" then 
+					AUX.pause_btn = w
+					AUX.searchActive = function() return not not AUX.pause_btn:IsVisible() end
+				end
+			end
+		end
+		
 		LSW_Message( true,"LilSparky's Workshop: added AUX functions");		
 		end
 	if (not LSW_AuctioneerHook and (addon == "Auctioneer" or Auctioneer)) then
@@ -938,9 +958,12 @@ if (not AUX and (addon == "aux-addon" or _G.aux ~= nil))then
 	end
 	
 	if (LSW_Mode ~= "ATSW" and (addon == "AdvancedTradeSkillWindow" or ATSW_ShowWindow)) then
-                LSW_Mode = "ATSW"
+        LSW_Mode = "ATSW"
 		ATSW_ShowWindow_ORIGINAL = ATSW_ShowWindow;
 		ATSW_ShowWindow = LSW_ShowWindowATSW;
+		
+		ATSW_ItemOnClick_ORIGINAL = ATSW_ItemOnClick
+		ATSW_ItemOnClick = LSW_ItemOnClick
 			
 		LSW_Message( true,"LilSparky's Workshop: plugging into AdvancedTradeSkillWindow.");
 		
@@ -963,20 +986,42 @@ local UFStartTime = time();
 local UFInitialized;
 local UpdateFrame;
 
-function UFOverHookEvents()
+local function UFOverHookEvents()
 	if(time() - UFStartTime > 5 and UFInitialized == nil) then
 		LSW_PostInitialize()
     	UFStartTime = nil;
 		UFInitialized = true;
 		this:Hide();
       	this:SetScript("OnUpdate", nil);
-      	this = nil;
    end
+end
+
+local function refreshValues()
+	
+	if aux_frame and aux_frame:IsVisible() and not AUX.searchActive() then
+		if LSW_Mode == "ATSW" then
+			for i=1, LSW_TRADESKILL_INDEX_MAX, 1 do
+			   local atswButton = getglobal("ATSWSkill"..i);
+			   LSW_refrash = true
+			   LSW_SkillShowByName("ATSWSkill"..i, atswButton:GetID())
+			   LSW_refrash =  false
+			end
+		end
+		this:Hide();
+		this:SetScript("OnUpdate", nil);
+	end
 end
 
 local UpdateFrame = CreateFrame("Frame", nil);
 UpdateFrame:SetScript("OnUpdate",UFOverHookEvents);
 UpdateFrame:RegisterEvent("OnUpdate");
+
+function LSW_ItemOnClick(link)
+	ATSW_ItemOnClick_ORIGINAL(link)
+	UpdateFrame:SetScript("OnUpdate", refreshValues);
+	UpdateFrame:Show()
+end
+
 
 function LSW_PostInitialize()
 		

@@ -7,5 +7,5 @@
 ## LoadWith: AdvancedTradeSkillWindow, Blizzard_CraftUI, Blizzard_TradeSkillUI
 ## SavedVariables: 
 ## SavedVariablesPerCharacter: 
-## Version: v0.5a
+## Version: v0.6
 lilsparkysworkshop.xml
