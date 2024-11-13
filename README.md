@@ -29,9 +29,9 @@ Tooltips for each column give more details about the price breakdowns LSW is con
 ##Changelog
 v0.6
 
-Updeted way to catch prices. Now it calculate all from AUX market value, not averedge. SO u need Scan daily price to get right prices.
-You can do Right-Click on ingradient or item in ATSW while AUX open.
-Also it will get crafted ingradient price, not AUX price, if  you can craft it.
+Updated way to catch prices. Now it calculate all from AUX market value, not average. SO u need Scan daily price to get right prices.
+You can do Right-Click on ingredient or item in ATSW while AUX open.
+Also it will get crafted ingredient price, not AUX price, if  you can craft it.
 
 
 >[!NOTE]
