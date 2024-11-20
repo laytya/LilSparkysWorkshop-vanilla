@@ -16,7 +16,7 @@ LSW_Mode = "TradeSkill";
 LSW_AuctioneerHook = false;
 local AUX = nil
 
-LSW_TRADESKILL_INDEX_MAX = 8
+LSW_TRADESKILL_INDEX_MAX = TRADE_SKILLS_DISPLAYED
 LSW_CRAFT_INDEX_MAX = 8
 
 LSW_MINIMUM_REAGENT_AUCTIONS = 10
@@ -744,8 +744,7 @@ function LSW_UpdateWindowStandard()
 		tradeSkillButton:Hide();
 	end
 	TradeSkillFrame_Update_ORIGINAL()
-	local name = GetTradeSkillLine()
-	TradeSkillFrameTitleText:SetText(name.." (LSW v0.2)");
+	
 end
 
 
@@ -761,6 +760,8 @@ function LSW_ShowWindowCraft()
 		
 		CraftFrame_Show_ORIGINAL();
 --		CraftFrame_Update();
+		local name = GetTradeSkillLine()
+		TradeSkillFrameTitleText:SetText(name.." (LSW v0.2)");
 		return;
 	else
 		for i=1, LSW_CRAFT_INDEX_MAX, 1 do
@@ -810,6 +811,7 @@ function LSW_UpdateWindowCraft()
 		local craftButton = getglobal("Craft"..i);
 		craftButton:Hide();
 	end
+	
 	CraftFrame_Update_ORIGINAL()
 	CraftFrameTitleText:SetText(GetCraftName().." (LSW v0.2)");
 end
