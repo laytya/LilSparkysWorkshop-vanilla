@@ -178,6 +178,18 @@
         <Button name="LSWCraftCost7" inherits="LSWTradeSkillCostButtonTemplate" />
         <Button name="LSWCraftCost8" inherits="LSWTradeSkillCostButtonTemplate" />
         
+<Button name="LSWCraftCost9" inherits="LSWTradeSkillCostButtonTemplate" />
+        <Button name="LSWCraftCost10" inherits="LSWTradeSkillCostButtonTemplate" />
+        <Button name="LSWCraftCost11" inherits="LSWTradeSkillCostButtonTemplate" />
+        <Button name="LSWCraftCost12" inherits="LSWTradeSkillCostButtonTemplate" />
+        <Button name="LSWCraftCost13" inherits="LSWTradeSkillCostButtonTemplate" />
+        <Button name="LSWCraftCost14" inherits="LSWTradeSkillCostButtonTemplate" />
+        <Button name="LSWCraftCost15" inherits="LSWTradeSkillCostButtonTemplate" />
+        <Button name="LSWCraftCost16" inherits="LSWTradeSkillCostButtonTemplate" />
+        <Button name="LSWCraftCost17" inherits="LSWTradeSkillCostButtonTemplate" />
+        <Button name="LSWCraftCost18" inherits="LSWTradeSkillCostButtonTemplate" />
+        <Button name="LSWCraftCost19" inherits="LSWTradeSkillCostButtonTemplate" />
+                
         <Button name="LSWCraftValue1" inherits="LSWTradeSkillValueButtonTemplate" />
         <Button name="LSWCraftValue2" inherits="LSWTradeSkillValueButtonTemplate" />
         <Button name="LSWCraftValue3" inherits="LSWTradeSkillValueButtonTemplate" />
@@ -187,6 +199,19 @@
         <Button name="LSWCraftValue7" inherits="LSWTradeSkillValueButtonTemplate" />
         <Button name="LSWCraftValue8" inherits="LSWTradeSkillValueButtonTemplate" />
         
+<Button name="LSWCraftValue9" inherits="LSWTradeSkillValueButtonTemplate" />
+        <Button name="LSWCraftValue10" inherits="LSWTradeSkillValueButtonTemplate" />
+        <Button name="LSWCraftValue11" inherits="LSWTradeSkillValueButtonTemplate" />
+        <Button name="LSWCraftValue12" inherits="LSWTradeSkillValueButtonTemplate" />
+        <Button name="LSWCraftValue13" inherits="LSWTradeSkillValueButtonTemplate" />
+        <Button name="LSWCraftValue14" inherits="LSWTradeSkillValueButtonTemplate" />
+        <Button name="LSWCraftValue15" inherits="LSWTradeSkillValueButtonTemplate" />
+        <Button name="LSWCraftValue16" inherits="LSWTradeSkillValueButtonTemplate" />
+        <Button name="LSWCraftValue17" inherits="LSWTradeSkillValueButtonTemplate" />
+        <Button name="LSWCraftValue18" inherits="LSWTradeSkillValueButtonTemplate" />
+        <Button name="LSWCraftValue19" inherits="LSWTradeSkillValueButtonTemplate" />
+
+        
         <Button name="LSWCraftItemLevel1" inherits="LSWTradeSkillItemLevelTemplate" />
         <Button name="LSWCraftItemLevel2" inherits="LSWTradeSkillItemLevelTemplate" />
         <Button name="LSWCraftItemLevel3" inherits="LSWTradeSkillItemLevelTemplate" />
@@ -195,6 +220,18 @@
         <Button name="LSWCraftItemLevel6" inherits="LSWTradeSkillItemLevelTemplate" />
         <Button name="LSWCraftItemLevel7" inherits="LSWTradeSkillItemLevelTemplate" />
         <Button name="LSWCraftItemLevel8" inherits="LSWTradeSkillItemLevelTemplate" />
+            
+<Button name="LSWCraftItemLevel9" inherits="LSWTradeSkillItemLevelTemplate" />
+        <Button name="LSWCraftItemLevel10" inherits="LSWTradeSkillItemLevelTemplate" />
+        <Button name="LSWCraftItemLevel11" inherits="LSWTradeSkillItemLevelTemplate" />
+        <Button name="LSWCraftItemLevel12" inherits="LSWTradeSkillItemLevelTemplate" />
+        <Button name="LSWCraftItemLevel13" inherits="LSWTradeSkillItemLevelTemplate" />
+        <Button name="LSWCraftItemLevel14" inherits="LSWTradeSkillItemLevelTemplate" />
+        <Button name="LSWCraftItemLevel15" inherits="LSWTradeSkillItemLevelTemplate" />
+        <Button name="LSWCraftItemLevel16" inherits="LSWTradeSkillItemLevelTemplate" />
+        <Button name="LSWCraftItemLevel17" inherits="LSWTradeSkillItemLevelTemplate" />
+        <Button name="LSWCraftItemLevel18" inherits="LSWTradeSkillItemLevelTemplate" />
+        <Button name="LSWCraftItemLevel19" inherits="LSWTradeSkillItemLevelTemplate" />
             
         </Frames>
  

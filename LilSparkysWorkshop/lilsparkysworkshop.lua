@@ -879,8 +879,9 @@ function LSW_ButtonInitStandard(i)
 	buttonLevel:SetText("");
 	
 	
+	if i <= LSW_CRAFT_INDEX_MAX then
+		local craftButton = getglobal("Craft"..i);
 	
-	local craftButton = getglobal("Craft"..i);
 	craftButton:SetScript("OnShow", LSW_SkillShow);
 	craftButton:SetScript("OnHide", LSW_SkillHide);	
 	craftButton:SetTextFontObject("GameFontNormalSmall");
@@ -907,7 +908,7 @@ function LSW_ButtonInitStandard(i)
 	buttonLevel:SetParent("CraftFrame");
 	buttonLevel:SetPoint("TOPLEFT","Craft"..i,"TOPLEFT",0,0);
 	buttonLevel:SetText("");
-
+	end
 end
 
 
@@ -983,11 +984,11 @@ function LSW_Initialize(addon)
 end
 
 local UFStartTime = time();
-local UFInitialized;
+local UFInitialized = false;
 local UpdateFrame;
 
 local function UFOverHookEvents()
-	if(time() - UFStartTime > 5 and UFInitialized == nil) then
+	if( not UFInitialized and time() - UFStartTime > 5) then
 		LSW_PostInitialize()
     	UFStartTime = nil;
 		UFInitialized = true;
