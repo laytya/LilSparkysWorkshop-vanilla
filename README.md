@@ -36,4 +36,4 @@ Also it will get crafted ingredient price, not AUX price, if  you can craft it.
 
 >[!NOTE]
 >**NOT WORKING w/ ATSW2**
->and NOT updated yet for 1.17.2 TWoW 
+
