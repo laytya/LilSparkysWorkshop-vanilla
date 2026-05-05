@@ -916,23 +916,17 @@ end
 
 function LSW_OnLoad()
 	this:RegisterEvent("ADDON_LOADED");
+	this:RegisterEvent("AUCTION_HOUSE_SHOW");
 end
 
 
 function LSW_OnEvent()
-	if (event == "ADDON_LOADED" and (arg1 == "LilSparkysWorkshop" or arg1 == "aux-addon" or arg1 == "Auctioneer" 
+	if (event == "ADDON_LOADED" and (arg1 == "LilSparkysWorkshop" or arg1 == "Auctioneer" 
 		or arg1 == "AdvancedTradeSkillWindow" or arg1 == "Enchantrix")) then
 		LSW_Initialize(arg1);
 	end
-end
-
-
-function LSW_Initialize(addon)
-	if addon == "LilSparkysWorkshop" then
-		LSW_Message( true,"LilSparky's Workshop " .. LSW_VERSION .. " loaded.");
-	end
+	if (event == "AUCTION_HOUSE_SHOW" and (not AUX) and _G.aux ~= nil and aux_frame ) then
 	
-	if (not AUX and (addon == "aux-addon" or _G.aux ~= nil))then
 		AUX = {}
 		AUX.history = require "aux.core.history"
 		AUX.info = require 'aux.util.info'
@@ -949,9 +943,17 @@ function LSW_Initialize(addon)
 				end
 			end
 		end
+		LSW_Message( true,"LilSparky's Workshop: added AUX functions");	
+		this:UnregisterEvent("AUCTION_HOUSE_SHOW");	
+	end
+end
 		
-		LSW_Message( true,"LilSparky's Workshop: added AUX functions");		
+
+function LSW_Initialize(addon)
+	if addon == "LilSparkysWorkshop" then
+		LSW_Message( true,"LilSparky's Workshop " .. LSW_VERSION .. " loaded.");
 		end
+	
 	if (not LSW_AuctioneerHook and (addon == "Auctioneer" or Auctioneer)) then
 		LSW_Message( true,"LilSparky's Workshop: added Auctioneer (v"..Auctioneer.Version..") functions");		
 		LSW_AuctioneerHook = true
@@ -1029,7 +1031,7 @@ end
 function LSW_PostInitialize()
 		
 	if (not Auctioneer) and (not AUX) then
-		LSW_Message( true,"ERROR: LilSparky's Workshop requires either Auctioneer or AUX to function properly.");
+		LSW_Message( true,"LilSparky's Workshop requires either Auctioneer or AUX to function properly.");
 		return;
 	end
 	
